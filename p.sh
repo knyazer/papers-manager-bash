@@ -30,6 +30,7 @@ load_papers() {
     if [[ "$target" == "" ]]; then
         target="$HOME/Downloads"
     fi
+    echo "Chosen target: $target"
 
     if [[ $all == 1 ]]; then
         find "$target" -name '*.pdf' | while read line; do
@@ -133,12 +134,14 @@ determine_article_name() {
 find_papers() {
     local pattern=$1
     
-    local all=0
+    local book=0
+    local paper=0
     shift
     while [[ "$#" -gt 0 ]]; do
         case $1 in
             -t|--target) target="$2"; shift ;;
-            -a|--all) all=1 ;;
+            -b|--book) book=1 ;;
+            -p|--paper) paper=1 ;;
             *) echo "Unknown parameter passed: $1"; exit 1 ;;
         esac
         shift
@@ -151,6 +154,14 @@ find_papers() {
 
 #    find "$HOME/papers" -type f -name "*.txt" -not -path "*/_*/*/*" | while read line; do
     grep -li "\b$pattern" $HOME/papers/*/*/*.txt | while read line; do
+        
+        local file_size=$(du -k "$line" | cut -f 1)
+        if [[ $book == 1 && $file_size -le 300 ]]; then
+            continue
+        fi
+        if [[ $paper == 1 && $file_size -ge 301 ]]; then
+            continue
+        fi
         local num_inside=$(grep -ois "\b$pattern" "$line" | wc -l)
 
         local nitm2=$(echo "$line" | grep -ois "${pattern// /_}" | wc -l)
