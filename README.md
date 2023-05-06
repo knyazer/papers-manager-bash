@@ -9,4 +9,4 @@ usage:
 ```pfi "hough"``` finds all the papers that contain keyword hough in any case, and then opens the chosen one using sioyek. Modify function f_pdf_open (don't remember exactly how it is called) if you want to use any other pdf editor.
 ```pfi dreamer -p``` search only papers (under 300kb text file)
 ```pfi dreamer -b``` search only books (300kb+ text files)
-
+```pfi dreamer -w 2``` search only that were downloaded/opened for the last 2 weeks

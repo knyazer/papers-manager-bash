@@ -22,7 +22,7 @@ load_papers() {
             -a|--all) all=1 ;;
             -f|--force) force="-f" ;;
             -m|--minutes) minutes="-$2"; shift ;;
-            *) echo "Unknown parameter passed: $1"; exit 1 ;;
+            *) echo "Unknown parameter passed: $1"; return 1 ;;
         esac
         shift
     done
@@ -136,13 +136,15 @@ find_papers() {
     
     local book=0
     local paper=0
+    local week=10000
     shift
     while [[ "$#" -gt 0 ]]; do
         case $1 in
             -t|--target) target="$2"; shift ;;
             -b|--book) book=1 ;;
             -p|--paper) paper=1 ;;
-            *) echo "Unknown parameter passed: $1"; exit 1 ;;
+            -w|--week) week="$2"; shift ;;
+            *) echo "Unknown parameter passed: $1"; return 1 ;;
         esac
         shift
     done
@@ -170,16 +172,27 @@ find_papers() {
         if [[ $num_inside -le 3 && num_in_the_name == 0 ]]; then 
             continue
         fi
+
+
+        local ac_file="$(dirname "$line")/.access"
+
+        local last_access=$(tail -n 1 $ac_file)
+
+        local current="$(date +%s)"
+        local comp=0
+        let "comp = ( $current - $last_access ) / ( 86400 * 7 )"
+        if [[ $comp -ge $week ]]; then
+            continue
+        fi
         # now the score can be computed via a really hard formula
         # 100 * num_in_the_name + last_access(rank) * 103 + second_to_last_access(rank) * 71 + third_to_last_access(rank) * 42 + num_inside(rank) * 11 + num_accesses(rank) * 7
         # Hence we need to store all the access time, and sort them, and then do a lot of searches all over them. Might be slow? Sure, but good enough.. If perf issues - will rewrite in rust :)
 
-        local ac_file="$(dirname "$line")/.access"
         while IFS= read -r other; do
             accesses+=("$other")
         done < <(tail -n 5 $ac_file)
         
-        local last_access=$(tail -n 1 $ac_file)
+
 
         local num=$(cat $ac_file | wc -l)
 
@@ -215,7 +228,7 @@ find_papers() {
 
     if [[ chosen_paper == -1 ]]; then
         echo "Exiting due to issues with menu"
-        exit 7
+        return 7
     fi
     
     echo "${p_access[$chosen_paper]}"
